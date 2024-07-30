@@ -1,10 +1,11 @@
 import { spawn } from "child_process";
-import { basename, extname, join } from "path";
+import { basename, extname, join, resolve } from "path";
 import { existsSync, readdirSync, renameSync } from "fs";
 
 const directoryPath = process.argv[2];
 const suffix = "_noaudio";
 const extension = ".mkv";
+const audioLanguage = "ja";
 
 /**
  * Constructs a command to run MKVMerge with specified input and output files.
@@ -19,13 +20,19 @@ const extension = ".mkv";
  * @throws {Error} Throws an error if `mkvmerge.exe` is not found in the current directory.
  */
 function buildCommand(inputFile, outputFile) {
-  const path = join(".", "mkvmerge.exe");
+  const path = resolve(".", "mkvmerge.exe");
 
   if (!existsSync(path)) {
     throw new Error("MKVMerge not found! Please install it.");
   }
 
-  const args = ["--output", outputFile, "--audio-tracks", "ja", inputFile];
+  const args = [
+    "--output",
+    outputFile,
+    "--audio-tracks",
+    audioLanguage,
+    inputFile,
+  ];
 
   return { path, args };
 }
@@ -55,8 +62,7 @@ function removeAudio(inputFile, outputFile) {
     });
 
     process.stderr.on("data", (data) => {
-      console.error(`MKVMerge error: ${data.toString()}`);
-      reject(new Error("Error during processing"));
+      reject(new Error(`MKVMerge error: ${data.toString()}`));
     });
 
     process.on("close", (code) => {
@@ -84,10 +90,11 @@ async function processDirectory(directory) {
     throw new Error("Please provide a directory to process");
   }
 
-  directory = directory.replace('"', "");
+  directory = directory.replace(/"/g, "");
 
   try {
     const files = readdirSync(directory);
+    const processedFiles = [];
 
     for (const file of files) {
       const filePath = join(directory, file);
@@ -101,13 +108,23 @@ async function processDirectory(directory) {
 
       const result = await removeAudio(filePath, outputPath);
       console.log(result);
+      processedFiles.push(filePath);
+
       renameSync(outputPath, filePath);
     }
+
+    return processedFiles;
   } catch (error) {
-    throw new Error(`Error processing directory: ${error}`);
+    throw new Error(`Error processing directory: ${error.message}`);
   }
 }
 
 processDirectory(directoryPath)
-  .then(() => console.log("Finished processing all files in the directory."))
+  .then((processedFiles) =>
+    console.log(
+      `Finished processing all files in the directory:\n${processedFiles.join(
+        "\n"
+      )}`
+    )
+  )
   .catch((error) => console.error(error));
