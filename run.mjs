@@ -6,6 +6,19 @@ const directoryPath = process.argv[2];
 const suffix = "_noaudio";
 const extension = ".mkv";
 
+function buildCommand(inputFile, outputFile) {
+  const path = join(".", "mkvmerge.exe");
+
+  if (!existsSync(path)) {
+    reject(new Error("MKVToolNix not found! Please install it."));
+    return;
+  }
+
+  const args = ["--output", outputFile, "--audio-tracks", "ja", inputFile];
+
+  return { path, args };
+}
+
 /**
  * Remove extraneous audio tracks from MKV files
  * @param {string} inputFile
@@ -14,21 +27,9 @@ const extension = ".mkv";
  */
 function removeAudio(inputFile, outputFile) {
   return new Promise((resolve, reject) => {
-    // Check if MKVToolNix is installed (adjust path based on your installation)
-    // TODO: Try to include MKV tools in the project itself
-    const MKVPath = join("C:", "Program Files", "MKVToolNix", "mkvmerge.exe");
+    const { path, args } = buildCommand(inputFile, outputFile);
 
-    if (!existsSync(MKVPath)) {
-      reject(new Error("MKVToolNix not found! Please install it."));
-      return;
-    }
-
-    // Build arguments
-    // TODO: Add information about arguments
-    const args = ["-o", outputFile, "-a", "ja", inputFile];
-
-    // Spawn MKVToolNix process
-    const process = spawn(MKVPath, args);
+    const process = spawn(path, args);
 
     process.stdout.on("data", (data) => {
       console.log(`mkvmerge output: ${data.toString()}`);
@@ -57,6 +58,8 @@ async function processDirectory(directory) {
   if (!directory) {
     throw new Error("Please provide a directory to process");
   }
+
+  directory = directory.replace('"', "");
 
   try {
     const files = readdirSync(directory);
