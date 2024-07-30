@@ -17,9 +17,9 @@ node run.mjs {path to your anime directory}
 
 ## TODO
 
-- [ ] Create batch file to run the script more elegantly
-- [ ] Handle errors more elegantly
+- [x] Create batch file to run the script more elegantly
+- [x] Handle errors more elegantly
 - [ ] Test more rigorously
 - [x] Try to include a portable version of MKVToolNix or look into MKV Cleaver
 - [x] Decouple MKV logic into another function
-- [ ] Double check console feedback
+- [x] Double check console feedback
